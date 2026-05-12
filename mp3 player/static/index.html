@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="/app/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Player</title>
+</head>
+<body>
+
+<div id="setupModal" class="setup-modal hidden">
+
+    <div class="setup-box">
+
+        <h1>Welcome</h1>
+
+        <p>What should we call you?</p>
+
+        <input
+            type="text"
+            id="nameInput"
+            placeholder="Your name"
+        >
+
+        <button id="saveNameBtn">
+            Continue
+        </button>
+
+    </div>
+
+</div>
+
+<div id="profileModal" class="setup-modal hidden">
+
+    <div class="setup-box">
+
+        <h1>Select Profile</h1>
+
+        <div id="profileList"></div>
+
+        <input
+            type="text"
+            id="newProfileInput"
+            placeholder="New profile name"
+        >
+
+        <button id="createProfileBtn">
+            Create Profile
+        </button>
+
+    </div>
+
+</div>
+
+<div class="app">
+
+    <aside class="sidebar">
+      <div class="logo">My Player</div>
+
+      <nav class="nav-links">
+
+        <button id="homeBtn">
+          <i class="fa-solid fa-house"></i>
+        Home
+        </button>
+
+        <button id="libraryBtn">
+          <i class="fa-solid fa-bars"></i>
+        Library
+        </button>
+
+        <button id="albumsButton">
+          <i class="fa-solid fa-record-vinyl"></i>
+        Albums
+        </button>
+
+      </nav>
+
+      <div class="sidebar-now-playing">
+
+      <img id="cover" class="sidebar-cover">
+
+        <div class="sidebar-song-info">
+
+          <div id="title">No song</div>
+
+          <div id="artist">---</div>
+
+        </div>
+
+      </div>
+    </aside>
+
+    <main class="main">
+
+      <section id="homeSection" class="page-section">
+
+        <h1 id="homeGreeting">
+          Home
+        </h1>
+
+        <h2>Recently Played</h2>
+        <div id="recentContainer" class="song-list"></div>
+
+        <h2>Recommended</h2>
+        <div id="recommendContainer" class="song-list"></div>
+
+      </section>
+
+
+      <section id="librarySection" class="page-section hidden">
+
+        <h1>Library</h1>
+
+        <button id="scanButton">
+        Scan Library
+        </button>
+
+        <div id="songContainer" class="song-list"></div>
+
+      </section>
+
+      <section id="albumsSection" class="hidden">
+
+        <h1>Albums</h1>
+
+        <div id="albumsGrid" class="albums-grid"></div>
+
+      </section>
+
+      <section id="albumDetailSection" class="hidden">
+
+        <button id="backToAlbums">
+        ←
+        </button>
+
+        <div class="album-header">
+
+          <img id="albumDetailCover" class="album-detail-cover">
+
+          <div class="album-info">
+
+            <h1 id="albumDetailTitle"></h1>
+
+            <h2 id="albumDetailArtist"></h2>
+
+          </div>
+
+        </div>
+
+      <div id="albumSongs" class="song-list"></div>
+
+      </section>
+      
+    </main>
+
+</div>
+
+<footer class="bottom-player">
+
+    <!-- CENTER -->
+    <div class="player-center">
+
+        <input
+            type="range"
+            id="progressBar"
+            value="0"
+            min="0"
+            max="100"
+        >
+
+        <div class="controls">
+
+            <button id="prev">⏮</button>
+
+            <button id="playPause">▶</button>
+
+            <button id="next">⏭</button>
+
+        </div>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div class="player-right">
+
+        <i class="fa-solid fa-volume-high"></i>
+
+        <input
+            type="range"
+            id="volumeSlider"
+            min="0"
+            max="1"
+            step="0.01"
+            value="1"
+        >
+
+    </div>
+
+    <audio id="player"></audio>
+
+</footer>
+
+<script>
+
+const player =
+  document.getElementById("player")
+
+const cover  =
+  document.getElementById("cover")
+
+const title  =
+  document.getElementById("title")
+
+const artist =
+  document.getElementById("artist")
+
+const playBtn =
+  document.getElementById("playPause")
+
+const nextBtn =
+  document.getElementById("next")
+
+const prevBtn =
+  document.getElementById("prev")
+
+const container =
+  document.getElementById("songContainer")
+
+const recommendContainer =
+  document.getElementById("recommendContainer")
+
+const recentContainer =
+  document.getElementById("recentContainer")
+
+const homeSection =
+  document.getElementById("homeSection")
+
+const librarySection =
+  document.getElementById("librarySection")
+
+const homeBtn =
+  document.getElementById("homeBtn")
+
+const libraryBtn =
+  document.getElementById("libraryBtn")
+
+const setupModal =
+  document.getElementById("setupModal")
+
+const nameInput =
+  document.getElementById("nameInput")
+
+const saveNameBtn =
+  document.getElementById("saveNameBtn")
+
+const homeGreeting =
+  document.getElementById("homeGreeting")
+
+const profileModal =
+  document.getElementById("profileModal")
+
+const profileList =
+  document.getElementById("profileList")
+
+const newProfileInput =
+  document.getElementById("newProfileInput")
+
+const storedUser =
+  localStorage.getItem("userId")
+
+const storedName =
+  localStorage.getItem("username")
+
+const createProfileBtn =
+  document.getElementById("createProfileBtn")
+
+const progressBar =
+  document.getElementById("progressBar")
+
+const volumeSlider =
+  document.getElementById("volumeSlider")
+
+const scanButton =
+  document.getElementById("scanButton")
+
+const albumsButton =
+  document.getElementById("albumsButton")
+
+const albumsSection =
+  document.getElementById("albumsSection")
+
+const albumsGrid =
+  document.getElementById("albumsGrid")
+
+const albumDetailSection =
+  document.getElementById("albumDetailSection")
+
+const albumDetailTitle =
+  document.getElementById("albumDetailTitle")
+
+const albumDetailArtist =
+  document.getElementById("albumDetailArtist")
+
+const albumDetailCover =
+  document.getElementById("albumDetailCover")
+
+const albumSongs =
+  document.getElementById("albumSongs")
+
+const backToAlbums =
+  document.getElementById("backToAlbums")
+
+let songs = []
+let currentUser = null
+let current = 0
+let userInitiatedPlayback = false
+
+
+fetch("/songs")
+  .then(res => res.json())
+  .then(data => {
+    songs = data
+
+    data.forEach(song => {
+      const div = document.createElement("div")
+      div.className = "song-item"
+      div.textContent = `${song.artist} - ${song.title}`
+
+      div.addEventListener("click", () => {
+        loadSong(song.id)
+        if (userInitiatedPlayback) {
+          player.play()
+        }
+      })
+
+      container.appendChild(div)
+    })
+
+    if (songs.length > 0) {
+      loadSong(0)
+    }
+  })
+
+function loadSong(id) {
+  const song = songs[id]
+
+  current = id
+
+  loadRecent()
+  loadRecommendations(id)
+
+fetch(`/play/${id}`, {
+  method: "POST",
+
+  headers: {
+    "Content-Type": "application/json"
+  },
+
+  body: JSON.stringify({
+    user_id: currentUser
+  })
+})
+
+  player.src = `/stream/${id}`
+  player.load()
+
+  title.textContent = song.title
+  artist.textContent = song.artist
+
+  cover.src = `/cover/${id}`
+
+  cover.onerror = () => {
+
+    cover.src =
+      "/app/assets/default-cover.png"
+  }
+  
+}
+
+function loadRecommendations(id) {
+
+  fetch(`/recommend/${id}`)
+    .then(res => res.json())
+    .then(data => {
+
+      recommendContainer.innerHTML = ""
+
+      data.forEach(song => {
+
+        const div = document.createElement("div")
+
+        div.className = "song-item"
+
+        div.textContent =
+          `${song.artist} - ${song.title}`
+
+        div.addEventListener("click", () => {
+          loadSong(song.id)
+          player.play()
+          userInitiatedPlayback = true
+        })
+
+        recommendContainer.appendChild(div)
+      })
+    })
+}
+
+function loadRecent() {
+
+  fetch(`/recent/${currentUser}`)
+    .then(res => res.json())
+    .then(data => {
+
+      recentContainer.innerHTML = ""
+
+      data.forEach(song => {
+
+        const div = document.createElement("div")
+
+        div.className = "song-item"
+
+        div.textContent =
+          `${song.artist} - ${song.title}`
+
+        div.addEventListener("click", () => {
+          loadSong(song.id)
+          player.play()
+          userInitiatedPlayback = true
+        })
+
+        recentContainer.appendChild(div)
+      })
+    })
+}
+
+playBtn.addEventListener("click", () => {
+
+  userInitiatedPlayback = true
+
+  if (player.paused) {
+
+    fetch(`/play/${current}`, {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify({
+        user_id: currentUser
+      })
+    })
+
+    player.play()
+
+  } else {
+
+    player.pause()
+  }
+})
+
+player.addEventListener("play", () => {
+  playBtn.textContent = "⏸"
+})
+
+player.addEventListener("pause", () => {
+  playBtn.textContent = "▶"
+})
+
+player.addEventListener("timeupdate", () => {
+
+  if (!player.duration) return
+
+  const progress =
+    (player.currentTime / player.duration)
+    * 100
+
+  progressBar.value = progress
+})
+
+progressBar.addEventListener("input", () => {
+
+  if (!player.duration) return
+
+  player.currentTime =
+    (progressBar.value / 100)
+    * player.duration
+})
+
+volumeSlider.addEventListener("input", () => {
+
+  player.volume =
+    volumeSlider.value
+})
+
+nextBtn.addEventListener("click", () => {
+  current = (current + 1) % songs.length
+  loadSong(current)
+  if (userInitiatedPlayback) {
+    player.play()
+  }
+})
+
+prevBtn.addEventListener("click", () => {
+  current = (current - 1 + songs.length) % songs.length
+  loadSong(current)
+  player.play()
+  userInitiatedPlayback = true
+})
+
+homeBtn.addEventListener("click", () => {
+
+  hideAllSections()
+
+  homeSection.classList.remove("hidden")
+})
+
+libraryBtn.addEventListener("click", () => {
+
+  hideAllSections()
+
+  librarySection.classList.remove("hidden")
+})
+
+function loadUserSetup() {
+
+  fetch("/settings/username", {
+  method: "POST",
+
+  headers: {
+    "Content-Type": "application/json"
+  },
+
+  body: JSON.stringify({
+    value: name
+  })
+})
+.then(res => res.json())
+.then(data => {
+
+  console.log(data)
+
+  homeGreeting.textContent =
+    `Hello ${name}`
+
+  setupModal.classList.add("hidden")
+})
+.catch(err => {
+  console.error(err)
+})
+}
+
+function loadProfiles() {
+
+  fetch("/users")
+    .then(res => res.json())
+    .then(data => {
+
+      profileList.innerHTML = ""
+
+      if (!localStorage.getItem("userId")) {
+        profileModal.classList.remove("hidden")
+      }
+
+      data.forEach(user => {
+
+        const btn = document.createElement("button")
+
+        btn.textContent = user.name
+
+        btn.addEventListener("click", () => {
+
+          currentUser = user.id
+
+          localStorage.setItem(
+            "userId",
+            user.id
+          )
+
+          localStorage.setItem(
+            "username",
+            user.name
+          )
+
+          profileModal.classList.add("hidden")
+
+          homeGreeting.textContent =
+            `Hello ${user.name}`
+
+          loadRecent()
+        })
+
+        profileList.appendChild(btn)
+      })
+    })
+}
+
+createProfileBtn.addEventListener("click", () => {
+
+  const name =
+    newProfileInput.value.trim()
+
+  if (!name) return
+
+  fetch("/users", {
+    method: "POST",
+
+    headers: {
+      "Content-Type": "application/json"
+    },
+
+    body: JSON.stringify({
+      name: name
+    })
+  })
+  .then(res => res.json())
+  .then(user => {
+
+    currentUser = user.id
+
+    localStorage.setItem(
+      "userId",
+      user.id
+    )
+
+    localStorage.setItem(
+      "username",
+      user.name
+    )
+
+    profileModal.classList.add("hidden")
+
+    homeGreeting.textContent =
+      `Hello ${user.name}`
+
+    loadProfiles()
+  })
+})
+
+saveNameBtn.addEventListener("click", () => {
+
+  const name = nameInput.value.trim()
+
+  if (!name) return
+
+  fetch("/settings/username", {
+    method: "POST",
+
+    headers: {
+      "Content-Type": "application/json"
+    },
+
+    body: JSON.stringify({
+      value: name
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+
+    console.log(data)
+
+    homeGreeting.textContent =
+      `Hello ${name}`
+
+    setupModal.classList.add("hidden")
+  })
+  .catch(err => {
+    console.error(err)
+  })
+})
+
+player.addEventListener("ended", () => {
+
+  current =
+    (current + 1) % songs.length
+
+  loadSong(current)
+
+  if (userInitiatedPlayback) {
+    player.play()
+  }
+})
+
+function renderAlbums() {
+
+  albumsGrid.innerHTML = ""
+
+  const albums = {}
+
+  songs.forEach(song => {
+
+    const key =
+      `${song.artist}-${song.album}`
+
+    if (!albums[key]) {
+
+      albums[key] = song
+    }
+  })
+
+  Object.values(albums).forEach(song => {
+
+    const card =
+      document.createElement("div")
+
+    card.className = "album-card"
+
+    card.innerHTML = `
+
+      <img src="/cover/${song.id}">
+
+      <div class="album-title">
+        ${song.album}
+      </div>
+
+      <div class="album-artist">
+        ${song.artist}
+      </div>
+    `
+
+    card.addEventListener("click", () => {
+
+      openAlbum(song)
+    })
+
+    albumsGrid.appendChild(card)
+  })
+}
+
+function openAlbum(song) {
+
+  hideAllSections()
+
+  albumDetailSection.classList.remove("hidden")
+
+  albumDetailTitle.textContent =
+    song.album
+
+  albumDetailArtist.textContent =
+    song.artist
+
+  albumDetailCover.src =
+    `/cover/${song.id}`
+
+  albumSongs.innerHTML = ""
+
+  const tracks = songs.filter(s =>
+    s.album === song.album &&
+    s.artist === song.artist
+  )
+
+  tracks.forEach(track => {
+
+    const div =
+      document.createElement("div")
+
+    div.className = "song-item"
+
+    div.textContent =
+      track.title
+
+    div.addEventListener("click", () => {
+
+      loadSong(track.id)
+
+      player.play()
+
+      userInitiatedPlayback = true
+    })
+
+    albumSongs.appendChild(div)
+  })
+}
+
+function hideAllSections() {
+
+  homeSection.classList.add("hidden")
+
+  librarySection.classList.add("hidden")
+
+  albumsSection.classList.add("hidden")
+
+  albumDetailSection.classList.add("hidden")
+}
+
+albumsButton.addEventListener("click", () => {
+
+  hideAllSections()
+
+  albumsSection.classList.remove("hidden")
+
+  renderAlbums()
+})
+
+backToAlbums.addEventListener("click", () => {
+
+  hideAllSections()
+
+  renderAlbums()
+
+  albumsSection.classList.remove("hidden")
+})
+
+scanButton.addEventListener("click", async () => {
+
+  scanButton.textContent = "Scanning..."
+
+  scanButton.disabled = true
+
+  try {
+
+    await fetch("/scan", {
+      method: "POST"
+    })
+
+    location.reload()
+
+  } catch (err) {
+
+    console.error(err)
+
+    scanButton.textContent =
+      "Scan Failed"
+
+    setTimeout(() => {
+
+      scanButton.textContent =
+        "Scan Library"
+
+      scanButton.disabled = false
+
+    }, 2000)
+  }
+})
+
+loadProfiles()
+
+</script>
+
+</body>
+</html>
