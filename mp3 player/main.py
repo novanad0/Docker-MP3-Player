@@ -32,9 +32,11 @@ musicbrainzngs.set_useragent(
 
 BASE_DIR = Path(__file__).parent
 
-DB_PATH = BASE_DIR / "music.db"
+DATA_DIR = BASE_DIR / "data"
 
-COVERS_DIR = BASE_DIR / "covers"
+DATA_DIR.mkdir(exist_ok=True)
+
+COVERS_DIR = DATA_DIR / "covers"
 
 COVERS_DIR.mkdir(exist_ok=True)
 
