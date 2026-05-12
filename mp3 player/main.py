@@ -597,7 +597,21 @@ def get_cover(song_id: int):
             detail="Song not found"
         )
 
-    # CACHE FIRST
+    song = songs_list[song_id]
+
+    path = song["path"]
+
+    # Local Folder Cover
+    local_cover = find_local_cover(path)
+
+    if local_cover:
+
+        return Response(
+            content=local_cover,
+            media_type="image/jpeg"
+        )
+
+    # Cache
     cached = load_cached_cover(song_id)
 
     if cached:
@@ -607,13 +621,9 @@ def get_cover(song_id: int):
             media_type="image/jpeg"
         )
 
-    song = songs_list[song_id]
-
-    path = song["path"]
-
     try:
 
-        # MP3 EMBEDDED
+        # Embedded mp3 Art
         if path.lower().endswith(".mp3"):
 
             audio = ID3(path)
@@ -632,7 +642,7 @@ def get_cover(song_id: int):
                         media_type="image/jpeg"
                     )
 
-        # FLAC EMBEDDED
+        # Embedded FLAC Art
         elif path.lower().endswith(".flac"):
 
             audio = FLAC(path)
@@ -655,22 +665,7 @@ def get_cover(song_id: int):
 
         print("Embedded cover error:", e)
 
-    # LOCAL FOLDER COVER
-
-    local_cover = find_local_cover(path)
-
-    if local_cover:
-        save_cached_cover(
-        song_id,
-        local_cover
-    )
-
-    return Response(
-        content=local_cover,
-        media_type="image/jpeg"
-    )
-
-    # MUSICBRAINZ FALLBACK
+    # MusicBrainz Fallback
     fallback = fetch_cover_art(
         song_id,
         song
