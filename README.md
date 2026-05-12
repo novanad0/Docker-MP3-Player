@@ -23,4 +23,4 @@ This is my first time working with docker, follow along or feel free to fork as 
           # Persistent cache/database
           - ./data:/app/data
 
-          restart: unless-stopped
+        restart: unless-stopped
