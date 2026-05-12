@@ -5,24 +5,22 @@ This is my first time working with docker, follow along or feel free to fork as 
   compose.yml
 
     services:
+      novamp3:
+        image: novaleg/novamp3:latest
 
-      mp3-player:
+        container_name: mp3-player
 
-      image: novaleg/novamp3:latest
+        ports:
+          - "8000:8000"
 
-      container_name: mp3-player
+        volumes:
 
-      ports:
-        - "8000:8000"
+          # User music library
+          - /path/to/music:/app/music
+          # Example
+          # /mnt/media/music:/app/music
 
-      volumes:
+          # Persistent cache/database
+          - ./data:/app/data
 
-        # User music library
-        - /path/to/music:/app/music
-        # Example
-        # /mnt/media/music:/app/music
-
-        # Persistent cache/database
-        - ./data:/app/data
-
-      restart: unless-stopped
+          restart: unless-stopped
