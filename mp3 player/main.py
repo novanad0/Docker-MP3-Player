@@ -36,6 +36,8 @@ DATA_DIR = BASE_DIR / "data"
 
 DATA_DIR.mkdir(exist_ok=True)
 
+DB_PATH = DATA_DIR / "music.db"
+
 COVERS_DIR = DATA_DIR / "covers"
 
 COVERS_DIR.mkdir(exist_ok=True)
