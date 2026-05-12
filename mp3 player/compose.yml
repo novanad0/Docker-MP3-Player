@@ -1,0 +1,16 @@
+services:
+
+  music-player:
+
+    build: .
+
+    container_name: music-player
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      - ./music:/app/music
+      - ./covers:/app/covers
+
+    restart: unless-stopped

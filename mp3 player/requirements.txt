@@ -2,3 +2,8 @@ fastapi
 uvicorn
 mutagen
 requests
+musicbrainzngs
+sentence-transformers
+scikit-learn
+torch
+numpy
