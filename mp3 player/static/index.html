@@ -78,6 +78,11 @@
         Albums
         </button>
 
+        <button id="queueButton">
+          <i class="fa-solid fa-list"></i>
+        Queue
+        </button>
+
       </nav>
 
       <div class="sidebar-now-playing">
@@ -156,6 +161,14 @@
 
       </section>
       
+      <section id="queueSection" class="hidden">
+
+        <h1>Queue</h1>
+
+        <div id="queueList" class="song-list"></div>
+
+      </section>
+
     </main>
 
 </div>
@@ -174,6 +187,13 @@
         >
 
         <div class="controls">
+
+            <button id="shuffleBtn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-shuffle" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M0 3.5A.5.5 0 0 1 .5 3H1c2.202 0 3.827 1.24 4.874 2.418.49.552.865 1.102 1.126 1.532.26-.43.636-.98 1.126-1.532C9.173 4.24 10.798 3 13 3v1c-1.798 0-3.173 1.01-4.126 2.082A9.6 9.6 0 0 0 7.556 8a9.6 9.6 0 0 0 1.317 1.918C9.828 10.99 11.204 12 13 12v1c-2.202 0-3.827-1.24-4.874-2.418A10.6 10.6 0 0 1 7 9.05c-.26.43-.636.98-1.126 1.532C4.827 11.76 3.202 13 1 13H.5a.5.5 0 0 1 0-1H1c1.798 0 3.173-1.01 4.126-2.082A9.6 9.6 0 0 0 6.444 8a9.6 9.6 0 0 0-1.317-1.918C4.172 5.01 2.796 4 1 4H.5a.5.5 0 0 1-.5-.5"/>
+                <path d="M13 5.466V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m0 9v-3.932a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192"/>
+              </svg>
+            </button>
 
             <button id="prev">⏮</button>
 
@@ -218,6 +238,9 @@ const title  =
 
 const artist =
   document.getElementById("artist")
+
+const shuffleBtn =
+  document.getElementById("shuffleBtn")
 
 const playBtn =
   document.getElementById("playPause")
@@ -312,31 +335,71 @@ const albumDetailCover =
 const albumSongs =
   document.getElementById("albumSongs")
 
+const queueButton =
+  document.getElementById("queueButton")
+
+const queueSection =
+  document.getElementById("queueSection")
+
+const queueList =
+  document.getElementById("queueList")
+
 const backToAlbums =
   document.getElementById("backToAlbums")
 
 let songs = []
+let queue = []
 let currentUser = null
 let current = 0
+let shuffleEnabled = false
 let userInitiatedPlayback = false
 
 
 fetch("/songs")
   .then(res => res.json())
   .then(data => {
+
     songs = data
 
     data.forEach(song => {
-      const div = document.createElement("div")
-      div.className = "song-item"
-      div.textContent = `${song.artist} - ${song.title}`
 
-      div.addEventListener("click", () => {
+      const div =
+        document.createElement("div")
+
+      div.className = "song-item"
+
+      const text =
+        document.createElement("span")
+
+      text.textContent =
+        `${song.artist} - ${song.title}`
+
+      text.addEventListener("click", () => {
+
         loadSong(song.id)
-        if (userInitiatedPlayback) {
-          player.play()
-        }
+
+        player.play()
+
+        userInitiatedPlayback = true
       })
+
+      const queueBtn =
+        document.createElement("button")
+
+      queueBtn.textContent = "+"
+
+      queueBtn.addEventListener("click", (e) => {
+
+        e.stopPropagation()
+
+        queue.push(song)
+
+        renderQueue()
+      })
+
+      div.appendChild(text)
+
+      div.appendChild(queueBtn)
 
       container.appendChild(div)
     })
@@ -347,40 +410,140 @@ fetch("/songs")
   })
 
 function loadSong(id) {
+
   const song = songs[id]
 
   current = id
 
   loadRecent()
+
   loadRecommendations(id)
 
-fetch(`/play/${id}`, {
-  method: "POST",
+  fetch(`/play/${id}`, {
 
-  headers: {
-    "Content-Type": "application/json"
-  },
+    method: "POST",
 
-  body: JSON.stringify({
-    user_id: currentUser
+    headers: {
+      "Content-Type": "application/json"
+    },
+
+    body: JSON.stringify({
+      user_id: currentUser
+    })
   })
-})
 
   player.src = `/stream/${id}`
+
   player.load()
 
-  title.textContent = song.title
-  artist.textContent = song.artist
+  title.textContent =
+    song.title
 
-  cover.src = `/cover/${id}`
+  artist.textContent =
+    song.artist
+
+  cover.src =
+    `/cover/${id}`
 
   cover.onerror = () => {
 
     cover.src =
       "/app/assets/default-cover.png"
   }
-  
 }
+
+function getNextSong() {
+
+  if (queue.length > 0) {
+
+    return queue.shift()
+  }
+
+  if (shuffleEnabled) {
+
+    const randomIndex =
+      Math.floor(
+        Math.random() * songs.length
+      )
+
+    return songs[randomIndex]
+  }
+
+  current =
+    (current + 1) % songs.length
+
+  return songs[current]
+}
+
+function renderQueue() {
+
+  queueList.innerHTML = ""
+
+  queue.forEach((song, index) => {
+
+    const div =
+      document.createElement("div")
+
+    div.className = "song-item"
+
+    const text =
+      document.createElement("span")
+
+    text.textContent =
+      `${song.artist} - ${song.title}`
+
+    text.addEventListener("click", () => {
+
+      loadSong(song.id)
+
+      player.play()
+
+      queue.splice(index, 1)
+
+      renderQueue()
+    })
+
+    const removeBtn =
+      document.createElement("button")
+
+    removeBtn.textContent = "−"
+
+    removeBtn.addEventListener("click", (e) => {
+
+      e.stopPropagation()
+
+      queue.splice(index, 1)
+
+      renderQueue()
+    })
+
+    div.appendChild(text)
+
+    div.appendChild(removeBtn)
+
+    queueList.appendChild(div)
+  })
+}
+
+queueButton.addEventListener("click", () => {
+
+  hideAllSections()
+
+  queueSection.classList.remove("hidden")
+
+  renderQueue()
+})
+
+shuffleBtn.addEventListener("click", () => {
+
+  shuffleEnabled =
+    !shuffleEnabled
+
+  shuffleBtn.style.color =
+    shuffleEnabled
+      ? "#1db954"
+      : "white"
+})
 
 function loadRecommendations(id) {
 
@@ -396,16 +559,40 @@ function loadRecommendations(id) {
 
         div.className = "song-item"
 
-        div.textContent =
-          `${song.artist} - ${song.title}`
+      const text =
+        document.createElement("span")
 
-        div.addEventListener("click", () => {
-          loadSong(song.id)
-          player.play()
-          userInitiatedPlayback = true
-        })
+      text.textContent =
+        `${song.artist} - ${song.title}`
 
-        recommendContainer.appendChild(div)
+      text.addEventListener("click", () => {
+
+        loadSong(song.id)
+
+        player.play()
+
+        userInitiatedPlayback = true
+      })
+
+      const queueBtn =
+        document.createElement("button")
+
+      queueBtn.textContent = "+"
+
+      queueBtn.addEventListener("click", (e) => {
+
+        e.stopPropagation()
+
+        queue.push(song)
+
+        renderQueue()
+      })
+
+      div.appendChild(text)
+
+      div.appendChild(queueBtn)
+
+      recommendContainer.appendChild(div)
       })
     })
 }
@@ -499,8 +686,14 @@ volumeSlider.addEventListener("input", () => {
 })
 
 nextBtn.addEventListener("click", () => {
-  current = (current + 1) % songs.length
-  loadSong(current)
+
+  const nextSong =
+    getNextSong()
+
+  if (!nextSong) return
+
+  loadSong(nextSong.id)
+
   if (userInitiatedPlayback) {
     player.play()
   }
@@ -676,10 +869,12 @@ saveNameBtn.addEventListener("click", () => {
 
 player.addEventListener("ended", () => {
 
-  current =
-    (current + 1) % songs.length
+  const nextSong =
+    getNextSong()
 
-  loadSong(current)
+  if (!nextSong) return
+
+  loadSong(nextSong.id)
 
   if (userInitiatedPlayback) {
     player.play()
@@ -761,10 +956,13 @@ function openAlbum(song) {
 
     div.className = "song-item"
 
-    div.textContent =
+    const text =
+      document.createElement("span")
+
+    text.textContent =
       track.title
 
-    div.addEventListener("click", () => {
+    text.addEventListener("click", () => {
 
       loadSong(track.id)
 
@@ -772,6 +970,24 @@ function openAlbum(song) {
 
       userInitiatedPlayback = true
     })
+
+    const queueBtn =
+      document.createElement("button")
+
+      queueBtn.textContent = "+"
+
+    queueBtn.addEventListener("click", (e) => {
+
+      e.stopPropagation()
+
+      queue.push(track)
+
+      renderQueue()
+    })
+
+    div.appendChild(text)
+
+    div.appendChild(queueBtn)
 
     albumSongs.appendChild(div)
   })
@@ -786,6 +1002,8 @@ function hideAllSections() {
   albumsSection.classList.add("hidden")
 
   albumDetailSection.classList.add("hidden")
+
+  queueSection.classList.add("hidden")
 }
 
 albumsButton.addEventListener("click", () => {

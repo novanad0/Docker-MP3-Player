@@ -575,3 +575,30 @@ height: 100%;
 
     background: #3a3a3a;
 }
+
+.song-item {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+}
+
+.song-item button {
+
+    background: none;
+
+    border: none;
+
+    color: white;
+
+    cursor: pointer;
+
+    font-size: 18px;
+}
+
+.song-item button:hover {
+
+    color: #1db954;
+}
