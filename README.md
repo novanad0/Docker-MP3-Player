@@ -6,7 +6,7 @@ This is my first time working with docker, follow along or feel free to fork as 
 
     services:
       novamp3:
-        image: novaleg/novamp3:latest
+        image: novaleg/novamp3v0.2:latest
 
         container_name: novaplayer
 
