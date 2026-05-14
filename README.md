@@ -8,7 +8,7 @@ This is my first time working with docker, follow along or feel free to fork as 
       novamp3:
         image: novaleg/novamp3:latest
 
-        container_name: mp3-player
+        container_name: novaplayer
 
         ports:
           - "8000:8000"
@@ -28,7 +28,7 @@ This is my first time working with docker, follow along or feel free to fork as 
 
 Currently testing and finding bugs for use cases where the library is large, if at any point you discover that your cover art is incorrect, open an issue. For now a temporary fix is to:
 
-    docker exec -it mp3-player bash
+    docker exec -it novaplayer bash
 
     cd data
 
