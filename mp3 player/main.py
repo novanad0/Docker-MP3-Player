@@ -212,6 +212,28 @@ def init_db():
     )
     """)
 
+    c.execute("""
+
+    CREATE TABLE IF NOT EXISTS playlists (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        user_id INTEGER,
+
+        name TEXT
+    )
+    """)
+
+    c.execute("""
+
+    CREATE TABLE IF NOT EXISTS playlist_songs (
+
+        playlist_id INTEGER,
+
+        song_id INTEGER
+    )
+    """)
+
     conn.commit()
     conn.close()
 
@@ -788,6 +810,145 @@ def write_setting(key: str, data: dict = Body(...)):
     set_setting(key, data["value"])
 
     return {"status": "ok"}
+
+@app.post("/playlists")
+def create_playlist(data: dict):
+
+    conn = sqlite3.connect(DB_PATH)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+
+        INSERT INTO playlists (
+
+            user_id,
+            name
+
+        )
+
+        VALUES (?, ?)
+
+    """, (
+
+        data["user_id"],
+        data["name"]
+    ))
+
+    conn.commit()
+
+    playlist_id = cursor.lastrowid
+
+    conn.close()
+
+    return {
+        "id": playlist_id
+    }
+
+@app.post("/playlists/{playlist_id}/songs")
+def add_song_to_playlist(
+    playlist_id: int,
+    data: dict
+):
+
+    conn = sqlite3.connect(DB_PATH)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+
+        INSERT INTO playlist_songs (
+
+            playlist_id,
+            song_id
+
+        )
+
+        VALUES (?, ?)
+
+    """, (
+
+        playlist_id,
+        data["song_id"]
+    ))
+
+    conn.commit()
+
+    conn.close()
+
+    return {
+        "success": True
+    }
+
+@app.get("/playlists/{user_id}")
+def get_playlists(user_id: int):
+
+    conn = sqlite3.connect(DB_PATH)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+
+        SELECT
+            id,
+            name
+
+        FROM playlists
+
+        WHERE user_id = ?
+
+    """, (user_id,))
+
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    return [
+
+        {
+            "id": row[0],
+            "name": row[1]
+        }
+
+        for row in rows
+    ]
+
+@app.get("/playlist/{playlist_id}")
+def get_playlist_songs(
+    playlist_id: int
+):
+
+    conn = sqlite3.connect(DB_PATH)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+
+        SELECT song_id
+
+        FROM playlist_songs
+
+        WHERE playlist_id = ?
+
+    """, (playlist_id,))
+
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    result = []
+
+    for row in rows:
+
+        song_id = row[0]
+
+        if song_id < len(songs_list):
+
+            result.append(
+                songs_list[song_id]
+            )
+
+    return result
 
 app.mount(
     "/app",

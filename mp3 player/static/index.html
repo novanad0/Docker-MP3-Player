@@ -78,10 +78,17 @@
         Albums
         </button>
 
+        <button id="playlistsButton">
+          <i class="fa-solid fa-music"></i>
+        Playlists
+        </button>
+
         <button id="queueButton">
           <i class="fa-solid fa-list"></i>
         Queue
         </button>
+
+
 
       </nav>
 
@@ -166,6 +173,34 @@
         <h1>Queue</h1>
 
         <div id="queueList" class="song-list"></div>
+
+      </section>
+
+      <section id="playlistsSection" class="hidden">
+
+        <div class="playlist-header">
+
+          <h1>Playlists</h1>
+
+          <button id="saveQueueBtn">
+          Save Queue
+          </button>
+
+        </div>
+
+        <div id="playlistList" class="song-list"></div>
+
+      </section>
+
+      <section id="playlistDetailSection" class="hidden">
+
+        <button id="backToPlaylists">
+        ←
+        </button>
+
+        <h1 id="playlistTitle"></h1>
+
+        <div id="playlistSongs" class="song-list"></div>
 
       </section>
 
@@ -344,6 +379,30 @@ const queueSection =
 const queueList =
   document.getElementById("queueList")
 
+const playlistsButton =
+  document.getElementById("playlistsButton")
+
+const playlistsSection =
+  document.getElementById("playlistsSection")
+
+const playlistList =
+  document.getElementById("playlistList")
+
+const saveQueueBtn =
+  document.getElementById("saveQueueBtn")
+
+const playlistDetailSection =
+  document.getElementById("playlistDetailSection")
+
+const playlistSongs =
+  document.getElementById("playlistSongs")
+
+const playlistTitle =
+  document.getElementById("playlistTitle")
+
+const backToPlaylists =
+  document.getElementById("backToPlaylists")
+
 const backToAlbums =
   document.getElementById("backToAlbums")
 
@@ -503,6 +562,95 @@ function renderQueue() {
       renderQueue()
     })
 
+function loadPlaylists() {
+
+  fetch(`/playlists/${currentUser}`)
+    .then(res => res.json())
+    .then(data => {
+
+      playlistList.innerHTML = ""
+
+      data.forEach(playlist => {
+
+        const div =
+          document.createElement("div")
+
+        div.className = "song-item"
+
+        div.textContent =
+          playlist.name
+
+        div.addEventListener("click", () => {
+
+          openPlaylist(playlist)
+        })
+
+        playlistList.appendChild(div)
+      })
+    })
+}
+
+function openPlaylist(playlist) {
+
+  hideAllSections()
+
+  playlistDetailSection
+    .classList.remove("hidden")
+
+  playlistTitle.textContent =
+    playlist.name
+
+  fetch(`/playlist/${playlist.id}`)
+    .then(res => res.json())
+    .then(data => {
+
+      playlistSongs.innerHTML = ""
+
+      data.forEach(song => {
+
+        const div =
+          document.createElement("div")
+
+        div.className = "song-item"
+
+        const text =
+          document.createElement("span")
+
+        text.textContent =
+          `${song.artist} - ${song.title}`
+
+        text.addEventListener("click", () => {
+
+          loadSong(song.id)
+
+          player.play()
+
+          userInitiatedPlayback = true
+        })
+
+        const queueBtn =
+          document.createElement("button")
+
+        queueBtn.textContent = "+"
+
+        queueBtn.addEventListener("click", (e) => {
+
+          e.stopPropagation()
+
+          queue.push(song)
+
+          renderQueue()
+        })
+
+        div.appendChild(text)
+
+        div.appendChild(queueBtn)
+
+        playlistSongs.appendChild(div)
+      })
+    })
+}
+
     const removeBtn =
       document.createElement("button")
 
@@ -534,6 +682,15 @@ queueButton.addEventListener("click", () => {
   renderQueue()
 })
 
+playlistsButton.addEventListener("click", () => {
+
+  hideAllSections()
+
+  playlistsSection.classList.remove("hidden")
+
+  loadPlaylists()
+})
+
 shuffleBtn.addEventListener("click", () => {
 
   shuffleEnabled =
@@ -543,6 +700,55 @@ shuffleBtn.addEventListener("click", () => {
     shuffleEnabled
       ? "#1db954"
       : "white"
+})
+
+saveQueueBtn.addEventListener("click", async () => {
+
+  const name =
+    prompt("Playlist name")
+
+  if (!name || queue.length === 0)
+    return
+
+  const res = await fetch("/playlists", {
+
+    method: "POST",
+
+    headers: {
+      "Content-Type": "application/json"
+    },
+
+    body: JSON.stringify({
+      name: name,
+      user_id: currentUser
+    })
+  })
+
+  const playlist =
+    await res.json()
+
+  for (const song of queue) {
+
+    await fetch(
+      `/playlists/${playlist.id}/songs`,
+      {
+
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          song_id: song.id
+        })
+      }
+    )
+  }
+
+  loadPlaylists()
+
+  alert("Playlist created")
 })
 
 function loadRecommendations(id) {
@@ -1004,6 +1210,10 @@ function hideAllSections() {
   albumDetailSection.classList.add("hidden")
 
   queueSection.classList.add("hidden")
+
+  playlistsSection.classList.add("hidden")
+
+  playlistDetailSection.classList.add("hidden")
 }
 
 albumsButton.addEventListener("click", () => {
@@ -1022,6 +1232,15 @@ backToAlbums.addEventListener("click", () => {
   renderAlbums()
 
   albumsSection.classList.remove("hidden")
+})
+
+backToPlaylists.addEventListener("click", () => {
+
+  hideAllSections()
+
+  playlistsSection.classList.remove("hidden")
+
+  loadPlaylists()
 })
 
 scanButton.addEventListener("click", async () => {
