@@ -24,3 +24,18 @@ This is my first time working with docker, follow along or feel free to fork as 
           - ./data:/app/data
 
         restart: unless-stopped
+
+
+Currently testing and finding bugs for use cases where the library is large, if at any point you discover that your cover art is incorrect, open an issue. For now a temporary fix is to:
+
+    docker exec -it mp3-player bash
+
+    cd data
+
+    rm -fr covers && rm -fr music.db
+
+    exit
+
+    docker compose restart
+
+This will remove any incorectly saved cover art, and re-cache the cover art assignments.
