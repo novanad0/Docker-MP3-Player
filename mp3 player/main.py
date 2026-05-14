@@ -8,6 +8,8 @@ from mutagen.mp3 import MP3
 from mutagen.id3 import ID3
 from mutagen.id3 import APIC
 
+import hashlib
+
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import json
@@ -323,24 +325,29 @@ def get_setting(key):
 
     return row[0] if row else None
 
-def get_cover_path(song_id):
+def get_cover_path(song_path):
 
-    return COVERS_DIR / f"{song_id}.img"
+    key = hashlib.md5(
+        song_path.encode()
+    ).hexdigest()
 
-def load_cached_cover(song_id):
+    return COVERS_DIR / f"{key}.img"
 
-    path = get_cover_path(song_id)
+def load_cached_cover(song_path):
 
-    if path.exists() and path.stat().st_size > 0:
-        return path.read_bytes()
+    cache_path = get_cover_path(song_path)
+
+    if cache_path.exists() and cache_path.stat().st_size > 0:
+
+        return cache_path.read_bytes()
 
     return None
 
-def save_cached_cover(song_id, image_bytes):
+def save_cached_cover(song_path, image_bytes):
 
-    path = get_cover_path(song_id)
+    cache_path = get_cover_path(song_path)
 
-    path.write_bytes(image_bytes)
+    cache_path.write_bytes(image_bytes)
 
 def set_setting(key, value):
     conn = sqlite3.connect(DB_PATH)
@@ -463,7 +470,9 @@ def find_local_cover(path):
 
 def fetch_cover_art(song_id, song):
 
-    cached = load_cached_cover(song_id)
+    path = song["path"]
+
+    cached = load_cached_cover(path)
 
     if cached:
         return cached
@@ -614,7 +623,7 @@ def get_cover(song_id: int):
         )
 
     # Cache
-    cached = load_cached_cover(song_id)
+    cached = load_cached_cover(path)
 
     if cached:
 
@@ -635,7 +644,7 @@ def get_cover(song_id: int):
                 if isinstance(tag, APIC):
 
                     save_cached_cover(
-                        song_id,
+                        path,
                         tag.data
                     )
 
@@ -654,7 +663,7 @@ def get_cover(song_id: int):
                 picture = audio.pictures[0]
 
                 save_cached_cover(
-                    song_id,
+                    path,
                     picture.data
                 )
 
